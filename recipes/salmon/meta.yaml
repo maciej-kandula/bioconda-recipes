@@ -1,43 +1,53 @@
-build:
-  number: 0
-  # XXX OSX source build currently failing due to unresolved symbols at runtime
-  skip: True # [osx]
-  string: boost{{CONDA_BOOST}}_{{PKG_BUILDNUM}}
-
-about:
-    home: https://github.com/COMBINE-lab/salmon
-    license: GPLv3
-    summary: Highly-accurate & wicked fast transcript-level quantification from RNA-seq reads using lightweight alignments
+{% set version="1.5.1" %}
 
 package:
-    name: salmon
-    version: 0.8.0
+  name: salmon
+  version: {{ version }}
+
+build:
+  number: 0
 
 source:
-  fn: v0.8.0.tar.gz
-  url: https://github.com/COMBINE-lab/salmon/archive/v0.8.0.tar.gz
-  sha256: a58799eb9ac61a91d941ab23485328e1fe2e869dbc2091c86ff6eb4300f284c5
+  url: https://github.com/COMBINE-lab/salmon/archive/v{{ version }}.tar.gz
+  sha256: 21b46dc00ac60409ce0a743019fa26a41a02ba2dcd72fea0678f862e41211246
 
 requirements:
   build:
-    - autoconf 2.69 pl5.*
-    - boost {{CONDA_BOOST}}*
-    - icu 56.*
+    - autoconf
     - cmake
-    - tbb
+    - make
+    - {{ compiler('cxx') }}
+    - {{ compiler('c') }}
+  host:
+    - boost-cpp
+    - icu 
     - zlib
     - bzip2
     - unzip
-    - gcc # [linux]
-    - llvm # [osx]
+    - jemalloc >=5.1.0
+    - tbb-devel
   run:
-    - boost {{CONDA_BOOST}}*
-    - icu 56.*
+    - boost-cpp
     - tbb
-    - zlib
-    - bzip2
-    - libgcc # [linux]
 
 test:
-    commands:
-      - salmon --help
+  source_files:
+    - sample_data.tgz
+  commands:
+    - salmon --help
+
+about:
+  home: https://github.com/COMBINE-lab/salmon
+  license: GPLv3
+  license_file: LICENSE
+  summary: Highly-accurate & wicked fast transcript-level quantification from RNA-seq reads using selective alignment
+
+extra:
+  recipe-maintainers:
+    - rob-p
+    - k3yavi
+  identifiers:
+    - biotools:salmon
+    - usegalaxy-eu:salmon
+    - usegalaxy-eu:alevin
+    - doi:10.1038/nmeth.4197

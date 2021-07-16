@@ -1,31 +1,30 @@
+{% set version = "0.16.1" %}
+
 package:
   name: seqkit
-  version: 0.4.4
+  version: {{ version }}
+
+source:
+  url: https://github.com/shenwei356/seqkit/releases/download/v{{ version }}/seqkit_darwin_amd64.tar.gz # [osx]
+  md5: bdaf6b03286f5d9bcd904838809b860d # [osx]
+
+  url: https://github.com/shenwei356/seqkit/releases/download/v{{ version }}/seqkit_linux_amd64.tar.gz # [linux]
+  md5: ea2e609fd5f3a46c9ef74bcf2fa3372c # [linux]
+
+build:
+  number: 0
+  skip: False
+
+test:
+  commands:
+    - seqkit version --help
 
 about:
   home: https://github.com/shenwei356/seqkit
   summary: Cross-platform and ultrafast toolkit for FASTA/Q file manipulation
   license: MIT
 
-build:
-  number: 0
-  skip: False
-
-source:
-  fn: seqkit_0.4.4_osx.tar.gz # [osx]
-  url: https://github.com/shenwei356/seqkit/releases/download/v0.4.4/seqkit_darwin_amd64.tar.gz # [osx]
-  md5: 02b1b0d2b9d4dabc3888db764e3fef43 # [osx]
-
-  fn: seqkit_0.4.4_linux.tar.gz # [linux]
-  url: https://github.com/shenwei356/seqkit/releases/download/v0.4.4/seqkit_linux_386.tar.gz # [linux]
-  md5: 99c9fb1d89fc379cb53b465d23cd9aad # [linux]
-
-  fn: seqkit_0.4.4_linux64.tar.gz # [linux64]
-  url: https://github.com/shenwei356/seqkit/releases/download/v0.4.4/seqkit_linux_amd64.tar.gz # [linux64]
-  md5: 90f7f67008440a4d8d46148d7a7a0c89 # [linux64]
-
-test:
-  commands:
-    - seqkit version --help
-
-
+extra:
+  skip-lints:
+    - should_be_noarch_generic
+    - should_not_be_noarch_source

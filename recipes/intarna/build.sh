@@ -3,26 +3,34 @@
 ## Choose extra configure options depending on the operating system
 ## (mac or linux)
 ##
-CXXFLAGS="$CXXFLAGS";
-LDFLAGS="$LDFLAGS";
+
+
+# suppress warnings
+# add -fopenmp to compilation due to viennarna setup
+CXXFLAGS="$CXXFLAGS -w -fopenmp"; 
+LDFLAGS="$LDFLAGS -Wl,-rpath ${PREFIX}/lib";
+
 if [ `uname` == Darwin ] ; then
-    # boost-setup from https://github.com/conda/conda-recipes/blob/master/boost/build.sh
-    echo "sorry.. cannot figure out how to build against the provided boost on osx.."
-    exit -1;
+    CXXFLAGS="$CXXFLAGS -stdlib=libc++"
+    LDFLAGS="$LDFLAGS -stdlib=libc++"
 else ## linux
-    # add -fopenmp to compilation due to viennarna setup
-    CXXFLAGS="-fopenmp"
+    CXXFLAGS="$CXXFLAGS"
 fi
 
+export CC=${CC}
+export CXX=${CXX}
 export CXXFLAGS=${CXXFLAGS}
 export LDFLAGS=${LDFLAGS}
 
 ./configure --prefix=$PREFIX \
-            --with-RNA=$PREFIX \
+            --with-vrna=$PREFIX \
             --with-boost=$PREFIX \
-            --disable-multithreading \
-            ${extra_config_options} \
+            --with-zlib=$PREFIX \
+            --disable-log-coloring \
+            --with-boost-libdir=$PREFIX/lib \
+            --disable-intarnapvalue \
+            ${extra_config_options}
             
-make && \
-make tests && \
+make -j 2
+make tests -j 2
 make install
