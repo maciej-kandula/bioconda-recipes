@@ -1,12 +1,30 @@
 #!/bin/bash
-set -eu -o pipefail
+set -euxo pipefail
 
-export LD_LIBRARY_PATH=${PREFIX}/lib
-cd $SRC_DIR
-mkdir -p build
-sed -i 's/Boost_USE_STATIC_LIBS ON/Boost_USE_STATIC_LIBS OFF/' CMakeLists.txt
-sed -i 's/.\/autogen.sh/CFLAGS=-fPIC CPPFLAGS=-fPIC .\/autogen.sh/' CMakeLists.txt
-sed -i 's/CFLAGS+=${STADEN_LIB}/CFLAGS+=${STADEN_LIB} CFLAGS+=-lz/' CMakeLists.txt
-cd build
-cmake -DCMAKE_EXE_LINKER_FLAGS="-L$PREFIX/lib" -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBOOST_ROOT=$PREFIX -DBoost_NO_SYSTEM_PATHS=ON -DBoost_DEBUG=ON ..
-make install CFLAGS="-L${PREFIX}/lib -I${PREFIX}/include"
+# salmon 2.0 (Rust) bioconda build.
+#
+# The workspace builds the `salmon` binary from the `salmon-cli` crate. The
+# committed Cargo.lock pins exact dependency versions (cf1-rs, piscem-rs, ksw2rs
+# from crates.io), so `--locked` gives a reproducible build.
+
+export CARGO_NET_GIT_FETCH_WITH_CLI=true
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  export DYLD_FALLBACK_LIBRARY_PATH="${BUILD_PREFIX}/lib:${PREFIX}/lib:/Library/Developer/CommandLineTools/usr/lib:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib${DYLD_FALLBACK_LIBRARY_PATH:+:${DYLD_FALLBACK_LIBRARY_PATH}}"
+fi
+
+# Bundle third-party license texts for the package (bioconda policy for Rust).
+cargo-bundle-licenses --format yaml --output THIRDPARTY.yml
+
+# The repo's .cargo/config.toml pins a portable SIMD floor (x86-64-v2 / aarch64
+# NEON); the alignment kernel (ksw2rs) still selects AVX2/SSE4.1/NEON at runtime.
+# x86-64-v2 (SSE4.2, ~2009+) is the floor — note this if a broader baseline is
+# ever required for the conda channel.
+cargo install \
+  --no-track \
+  --locked \
+  --bins \
+  --root "${PREFIX}" \
+  --path crates/salmon-cli
+
+# `salmon-cli` installs a binary named `salmon` (see its [[bin]] name).

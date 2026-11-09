@@ -1,28 +1,34 @@
 #!/bin/bash
 
-## Choose extra configure options depending on the operating system
-## (mac or linux)
-##
-CXXFLAGS="$CXXFLAGS";
-LDFLAGS="$LDFLAGS";
-if [ `uname` == Darwin ] ; then
-    # boost-setup from https://github.com/conda/conda-recipes/blob/master/boost/build.sh
-    echo "sorry.. cannot figure out how to build against the provided boost on osx.."
-    exit -1;
-else ## linux
-    # add -fopenmp to compilation due to viennarna setup
-    CXXFLAGS="-fopenmp"
+# suppress warnings and add -fopenmp to compilation due to viennarna setup
+export LDFLAGS="${LDFLAGS} -Wl,-rpath ${PREFIX}/lib";
+export CPPFLAGS="${CPPFLAGS} -I${PREFIX}/include";
+export CXXFLAGS="${CXXFLAGS} -O3 -w -fopenmp";
+
+if [[ `uname -s` == "Darwin" ]] ; then
+	export CXXFLAGS="${CXXFLAGS} -stdlib=libc++"
+	export LDFLAGS="${LDFLAGS} -stdlib=libc++"
+	export extra_config_options="${extra_config_options} --disable-pkg-config"
+else  ## linux
+	export CXXFLAGS="${CXXFLAGS}"
 fi
 
-export CXXFLAGS=${CXXFLAGS}
-export LDFLAGS=${LDFLAGS}
+cp -f ${BUILD_PREFIX}/share/gnuconfig/config.* .
 
-./configure --prefix=$PREFIX \
-            --with-RNA=$PREFIX \
-            --with-boost=$PREFIX \
-            --disable-multithreading \
-            ${extra_config_options} \
-            
-make && \
-make tests && \
+./configure --prefix="${PREFIX}" \
+	--with-vrna="${PREFIX}" \
+	--with-boost="${PREFIX}" \
+	--with-zlib="${PREFIX}" \
+	--disable-log-coloring \
+	--with-boost-libdir="${PREFIX}/lib" \
+	--disable-intarnapvalue \
+	CXX="${CXX}" \
+	${extra_config_options}
+
+
+make -j"${CPU_COUNT}"
+
+if [[ `uname -s` != "Darwin" ]]; then  # skip tests for osx to avoid timeout
+	make tests -j"${CPU_COUNT}"
+fi
 make install
